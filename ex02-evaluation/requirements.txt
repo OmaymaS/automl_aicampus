@@ -1,0 +1,11 @@
+pytest
+pycodestyle
+argparse
+numpy
+pandas
+scipy
+matplotlib
+seaborn
+
+
+# add your requirements below this line

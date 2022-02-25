@@ -1,5 +1,8 @@
 from collections import defaultdict
 from typing import List, Tuple, Dict
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 
 # TODO load a regressor from sklearn to solve exercise 2
 # TODO load a classifier from sklearn to solve exercise 3
@@ -35,10 +38,8 @@ def get_stats(aslib_data: List, cutoff: float, par: int = 10) -> (float, float):
         df_partial = df.iloc[df_grouped.groups[k]]
         score_list = df_partial['runtime'].apply(lambda x: par*cutoff if (x >= cutoff) else x)
         algos[k]=score_list
-        
     single_best = min([sum(score_list)/len(1+score_list) for score_list in algos.values()])
-    print(single_best)
-    
+
     ## VIRTUAL BEST 
     df_grouped = df.groupby('instance_id')
     groups_keys = df_grouped.groups.keys()
@@ -46,13 +47,9 @@ def get_stats(aslib_data: List, cutoff: float, par: int = 10) -> (float, float):
         df_partial = df.iloc[df_grouped.groups[k]]
         score_list = df_partial['runtime'].apply(lambda x: par*cutoff if (x >= cutoff) else x)
         insts[k]=min(score_list)
-        
-    # virtual_best = float(1)
     virtual_best=sum([score_list for score_list in insts.values()])/len(insts.values()) 
-    print(virtual_best)    
-    # raise NotImplementedError
+  
     return virtual_best,single_best
-
 
 def hybrid_model(test_instances: List[str], algos: List[str], run_df: pd.DataFrame,
                  feature_df: pd.DataFrame, test_feature_df: pd.DataFrame) -> List[int]:
@@ -69,12 +66,18 @@ def hybrid_model(test_instances: List[str], algos: List[str], run_df: pd.DataFra
     """
     y_predictions = np.zeros((len(test_instances), len(algos)))
     X_train = feature_df.values[:, 1:]
-    # TODO for each pair of algorithms, fit a model that classifies if outer outperforms inner.
+    X_test = test_feature_df.values[:, 1:]
+
     # Use voting to decide which algorithm solves which instance
-    for idx_outer, algo_outer in enumerate(algos):
-        for idx_inner, algo_inner in enumerate(algos):
-            raise NotImplementedError
+    min_idx = run_df.groupby('instance_id')['runtime'].idxmin()
+    voted_algos=run_df.iloc[min_idx]
+    y_train = voted_algos['algorithm']
+    
+    ## Fit model and predict
+    log_reg = LogisticRegression(random_state=0, solver='lbfgs', multi_class='auto').fit(X_train, y_train)
+    y_predictions=log_reg.predict_proba(X_test) 
     selection = y_predictions.argmax(axis=1)
+    
     return selection
 
 
@@ -92,10 +95,16 @@ def individual_model(test_instances: List[str], algos: List[str], run_df: pd.Dat
              an instance in test_instances
     """
     y_predictions = np.zeros((len(test_instances), len(algos)))
-    # TODO for each algorithm, fit a model and predict the performance on the test instances
+    
     for idx, algo in enumerate(algos):
-        raise NotImplementedError
+        y_train = run_df[run_df['algorithm']==algo]['runtime']
+        X_train = feature_df.values[:, 1:]
+        X_test = test_feature_df.values[:, 1:]
+        reg = LinearRegression().fit(X_train, y_train)
+        y_predictions[:,idx]=reg.predict(X_test)
+        
     selection = y_predictions.argmin(axis=1)
+    
     return selection
 
 

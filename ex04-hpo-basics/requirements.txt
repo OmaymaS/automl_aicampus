@@ -1,0 +1,5 @@
+pytest
+pycodestyle
+numpy
+
+# for this exercise you are not allowed to add new packages

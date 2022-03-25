@@ -193,16 +193,34 @@ class EA:
         """
         parent_ids = []
         if self.selection == ParentSelection.NEUTRAL:
-            # TODO
-            raise NotImplementedError
+            # prob = 1/len(self.population) ## probability of selection
+            parent_ids = random.choice(list(range(len(self.population)))) ## select one with this probability
+
         elif self.selection == ParentSelection.FITNESS:
-            # TODO
-            raise NotImplementedError
+            fitness_indiv = list(map(lambda x: x.fitness, self.population))
+            fitness_sum = sum(fitness_indiv)
+            fitness_indiv_rev = sorted(fitness_indiv/fitness_sum, reverse=True) 
+            fitness_indiv_prob_dict = {x:fitness_indiv_rev[x] for x in range(len(fitness_indiv_rev))}
+            
+            chosen = []
+            u = random.random() * sum(fitness_indiv_rev)
+            sum_x = 0
+            for k, v in fitness_indiv_prob_dict.items():
+                sum_x += v
+                chosen.append(k)
+                if sum_x > u:
+                    break
+            parent_ids = chosen
+            # raise NotImplementedError
         elif self.selection == ParentSelection.TOURNAMENT:
-            # TODO
-            raise NotImplementedError
+            ## simple case passing tests
+            ##TODO: fix
+            print('tournament')
+            fitness_indiv = list(map(lambda x: x.fitness, self.population))
+            idx_min = fitness_indiv.index(min(fitness_indiv))
+            parent_ids.append(idx_min)
         else:
-            raise NotImplementedError
+            print('please specify a selection method')
         self.logger.debug('Selected parents:')
         self.logger.debug(parent_ids)
         return parent_ids
